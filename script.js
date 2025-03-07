@@ -43,16 +43,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let clickCount = 0;
     let clickTimer;
 
-    const abgFinderLogo = document.querySelector(".navbar .logo, .navbar h1, .abg-finder-text"); // Adjust to match your structure
+    const abgFinderLogo = document.querySelector(".navbar .logo, .navbar h1, .abg-finder-text");
 
     if (abgFinderLogo) {
         console.log("🟢 ABG FINDER text detected as backdoor trigger.");
-
-        // **Make sure it's clickable**
         abgFinderLogo.style.cursor = "pointer";
 
         abgFinderLogo.addEventListener("click", function (event) {
-            event.preventDefault(); // Prevents default behavior
+            event.preventDefault();
             clickCount++;
             console.log(`🔎 Click detected: ${clickCount}`);
 
@@ -60,8 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 clickTimer = setTimeout(() => {
                     clickCount = 0;
                     console.log("🔄 Redirecting to home page.");
-                    window.location.href = "index.html"; // Change this if needed
-                }, 1000); // If only 1 click in 1 sec, go to home
+                    window.location.href = "index.html";
+                }, 1000);
             }
 
             if (clickCount >= 4) {
@@ -120,12 +118,43 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // === FIXED: UPDATE HOTSPOTS BASED ON TIME ===
+    // === ADDITION: GET TIME FROM USER (INCLUDING SECONDS) ===
+    function getUserTime() {
+        let userTimeInput = prompt("Enter time (HH:MM:SS AM/PM) or press Cancel to use current time:");
+
+        if (userTimeInput) {
+            let parsedTime = parseUserTime(userTimeInput);
+            if (parsedTime !== null) {
+                return parsedTime.hours * 3600 + parsedTime.minutes * 60 + parsedTime.seconds;
+            } else {
+                alert("Invalid time format. Using current system time.");
+            }
+        }
+        let now = new Date();
+        return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    }
+
+    // Function to parse user input time
+    function parseUserTime(userInput) {
+        let match = userInput.match(/(\d{1,2}):(\d{2}):(\d{2})\s?(AM|PM)/i);
+        if (!match) return null;
+
+        let hours = parseInt(match[1]);
+        let minutes = parseInt(match[2]);
+        let seconds = parseInt(match[3]);
+        let period = match[4].toUpperCase();
+
+        if (period === "PM" && hours !== 12) hours += 12;
+        if (period === "AM" && hours === 12) hours = 0;
+
+        return { hours, minutes, seconds };
+    }
+
+    // === UPDATED: UPDATE HOTSPOTS BASED ON TIME ===
     function updateHotspots() {
         console.log("🔄 Updating hotspots...");
 
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const currentTime = getUserTime();
 
         const hotspots = {
             "cafeteria": document.getElementById("cafeteria"),
@@ -139,13 +168,13 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset all to yellow (low)
         Object.values(hotspots).forEach(el => el.style.backgroundColor = "yellow");
 
-        if ((currentTime >= 435 && currentTime <= 465) || (currentTime >= 680 && currentTime <= 720)) {
+        if ((currentTime >= 435 * 60 && currentTime <= 465 * 60) || (currentTime >= 680 * 60 && currentTime <= 720 * 60)) {
             hotspots["cafeteria"].style.backgroundColor = "red";
         }
-        if (currentTime >= 680 && currentTime <= 720) {
+        if (currentTime >= 680 * 60 && currentTime <= 720 * 60) {
             hotspots["upper-grind"].style.backgroundColor = "red";
         }
-        if (currentTime >= 890 && currentTime <= 1020) {
+        if (currentTime >= 890 * 60 && currentTime <= 1020 * 60) {
             hotspots["swimming-pool"].style.backgroundColor = "red";
             hotspots["tennis-court"].style.backgroundColor = "red";
             hotspots["rajendra"].style.backgroundColor = "red";
@@ -153,6 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const timestamp = document.getElementById("timestamp");
         if (timestamp) {
+            let now = new Date();
             timestamp.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
         } else {
             console.warn("⚠️ Timestamp element not found.");
@@ -163,46 +193,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     setInterval(updateHotspots, 1000);
     updateHotspots();
-
-    // === GRAPH FUNCTION (SHOWS WHEN LOCATION IS CLICKED) ===
-    function openGraph(location) {
-        const modal = document.getElementById("graphModal");
-        const modalTitle = document.getElementById("modalTitle");
-        const detailGraphCanvas = document.getElementById("detailGraph");
-
-        modal.style.display = "flex";
-        modalTitle.textContent = location.replace("-", " ").toUpperCase();
-
-        if (window.detailChart) {
-            window.detailChart.destroy();
-        }
-
-        window.detailChart = new Chart(detailGraphCanvas, {
-            type: "line",
-            data: {
-                labels: ["7:00", "9:00", "11:00", "13:00", "15:00", "17:00", "19:00"],
-                datasets: [{
-                    label: `${location.replace("-", " ")} ABG Density`,
-                    data: [1, 3, 5, 7, 9, 6, 4],
-                    borderColor: "red",
-                    borderWidth: 2,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: "Time", color: "white" }, grid: { color: "gray" } },
-                    y: { title: { display: true, text: "ABG Density", color: "white" }, grid: { color: "gray" } }
-                }
-            }
-        });
-    }
-
-    // === CLOSE BUTTON WORKS FOR ALL GRAPHS ===
-    document.querySelector(".close").addEventListener("click", function () {
-        console.log("❌ Closing graph modal...");
-        document.getElementById("graphModal").style.display = "none";
-    });
-
 });
