@@ -31,19 +31,18 @@ document.addEventListener("DOMContentLoaded", function () {
         console.warn("⚠️ Smooth wrapper not found.");
     }
 
-    // === FIXED: STOP JUMPING TO HOME PAGE ON LOCATION CLICKS ===
+    // === STOP JUMPING TO HOME PAGE ON LOCATION CLICKS ===
     document.querySelectorAll('.heatmap-cell').forEach(cell => {
         cell.addEventListener("click", function (event) {
-            event.preventDefault(); // Stops jumping
+            event.preventDefault();
             openGraph(this.id);
         });
     });
 
-    // === BACKDOOR SYSTEM: "ABG FINDER" TEXT AS SECRET BUTTON ===
+    // === BACKDOOR SYSTEM ===
     let clickCount = 0;
     let clickTimer;
-
-    const abgFinderLogo = document.querySelector(".navbar .logo, .navbar h1, .abg-finder-text");
+    const abgFinderLogo = document.getElementById("backdoor");
 
     if (abgFinderLogo) {
         console.log("🟢 ABG FINDER text detected as backdoor trigger.");
@@ -52,7 +51,6 @@ document.addEventListener("DOMContentLoaded", function () {
         abgFinderLogo.addEventListener("click", function (event) {
             event.preventDefault();
             clickCount++;
-            console.log(`🔎 Click detected: ${clickCount}`);
 
             if (clickCount === 1) {
                 clickTimer = setTimeout(() => {
@@ -69,56 +67,39 @@ document.addEventListener("DOMContentLoaded", function () {
                 openKeypad();
             }
         });
-    } else {
-        console.warn("⚠️ ABG FINDER text not found.");
     }
 
     function openKeypad() {
-        const keypadOverlay = document.getElementById("keypadOverlay");
-        if (keypadOverlay) {
-            keypadOverlay.style.display = "flex";
-            document.getElementById("pinInput").value = "";
-            console.log("🔓 Keypad displayed.");
-        } else {
-            console.error("❌ Keypad overlay element not found.");
-        }
+        document.getElementById("adminModal").style.display = "flex";
+        document.getElementById("pinInput").value = "";
     }
 
     function closeKeypad() {
-        document.getElementById("keypadOverlay").style.display = "none";
+        document.getElementById("adminModal").style.display = "none";
     }
 
-    // === FIXED: KEYPAD FUNCTIONALITY ===
+    // === KEYPAD FUNCTIONALITY ===
     const pinInput = document.getElementById("pinInput");
     const submitPin = document.getElementById("submitPin");
-    const backspace = document.getElementById("backspace");
+    const closeAdmin = document.getElementById("closeAdmin");
     const errorMsg = document.getElementById("errorMsg");
     const correctPin = "2122";
-
-    document.querySelectorAll(".key-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            if (pinInput.value.length < 4) {
-                pinInput.value += this.dataset.value;
-            }
-        });
-    });
-
-    backspace.addEventListener("click", function () {
-        pinInput.value = pinInput.value.slice(0, -1);
-    });
 
     submitPin.addEventListener("click", function () {
         if (pinInput.value === correctPin) {
             console.log("✅ Correct PIN entered. Redirecting...");
             window.location.href = "admin.html";
         } else {
-            errorMsg.textContent = "Incorrect PIN";
-            setTimeout(() => { errorMsg.textContent = ""; }, 2000);
+            alert("Incorrect PIN");
             pinInput.value = "";
         }
     });
 
-    // === ADDITION: GET TIME FROM USER (INCLUDING SECONDS) ===
+    closeAdmin.addEventListener("click", closeKeypad);
+
+    // === GET TIME FROM USER OR SYSTEM ===
+    let currentTimeInSeconds = getUserTime();
+
     function getUserTime() {
         let userTimeInput = prompt("Enter time (HH:MM:SS AM/PM) or press Cancel to use current time:");
 
@@ -130,11 +111,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("Invalid time format. Using current system time.");
             }
         }
+
         let now = new Date();
         return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
     }
 
-    // Function to parse user input time
     function parseUserTime(userInput) {
         let match = userInput.match(/(\d{1,2}):(\d{2}):(\d{2})\s?(AM|PM)/i);
         if (!match) return null;
@@ -150,47 +131,82 @@ document.addEventListener("DOMContentLoaded", function () {
         return { hours, minutes, seconds };
     }
 
-    // === UPDATED: UPDATE HOTSPOTS BASED ON TIME ===
+    // === UPDATE HOTSPOTS BASED ON TIME ===
     function updateHotspots() {
         console.log("🔄 Updating hotspots...");
-
-        const currentTime = getUserTime();
+        currentTimeInSeconds++;
 
         const hotspots = {
-            "cafeteria": document.getElementById("cafeteria"),
-            "upper-grind": document.getElementById("upper-grind"),
-            "swimming-pool": document.getElementById("swimming-pool"),
-            "tennis-court": document.getElementById("tennis-court"),
-            "breeze-way": document.getElementById("breeze-way"),
-            "rajendra": document.getElementById("rajendra")
+            "Band Room": document.getElementById("Band Room"),
+            "Strings Room": document.getElementById("Strings Room"),
+            "Piano Room": document.getElementById("Piano Room"),
+            "Choir Room": document.getElementById("Choir Room"),
+            "Hall Way": document.getElementById("Hall Way"),
+            "Cafateria": document.getElementById("Cafateria")
         };
 
         // Reset all to yellow (low)
         Object.values(hotspots).forEach(el => el.style.backgroundColor = "yellow");
 
-        if ((currentTime >= 435 * 60 && currentTime <= 465 * 60) || (currentTime >= 680 * 60 && currentTime <= 720 * 60)) {
-            hotspots["cafeteria"].style.backgroundColor = "red";
+        if (currentTimeInSeconds >= 435 * 60 && currentTimeInSeconds <= 465 * 60) {
+            hotspots["Band Room"].style.backgroundColor = "red";
         }
-        if (currentTime >= 680 * 60 && currentTime <= 720 * 60) {
-            hotspots["upper-grind"].style.backgroundColor = "red";
+        if (currentTimeInSeconds >= 680 * 60 && currentTimeInSeconds <= 720 * 60) {
+            hotspots["Strings Room"].style.backgroundColor = "red";
         }
-        if (currentTime >= 890 * 60 && currentTime <= 1020 * 60) {
-            hotspots["swimming-pool"].style.backgroundColor = "red";
-            hotspots["tennis-court"].style.backgroundColor = "red";
-            hotspots["rajendra"].style.backgroundColor = "red";
+        if (currentTimeInSeconds >= 890 * 60 && currentTimeInSeconds <= 1020 * 60) {
+            hotspots["Piano Room"].style.backgroundColor = "red";
+            hotspots["Choir Room"].style.backgroundColor = "red";
+            hotspots["Cafateria"].style.backgroundColor = "red";
         }
 
         const timestamp = document.getElementById("timestamp");
         if (timestamp) {
-            let now = new Date();
+            let now = new Date(currentTimeInSeconds * 1000);
             timestamp.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        } else {
-            console.warn("⚠️ Timestamp element not found.");
         }
-
-        console.log("✅ Hotspots updated.");
     }
 
     setInterval(updateHotspots, 1000);
     updateHotspots();
+
+    // === GRAPH FUNCTION ===
+    function openGraph(location) {
+        const modal = document.getElementById("graphModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const detailGraphCanvas = document.getElementById("detailGraph");
+
+        modal.style.display = "flex";
+        modalTitle.textContent = location.toUpperCase();
+
+        if (window.detailChart) {
+            window.detailChart.destroy();
+        }
+
+        window.detailChart = new Chart(detailGraphCanvas, {
+            type: "line",
+            data: {
+                labels: ["7:00", "9:00", "11:00", "13:00", "15:00", "17:00", "19:00"],
+                datasets: [{
+                    label: `${location} ABG Density`,
+                    data: [1, 3, 5, 7, 9, 6, 4],
+                    borderColor: "red",
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: "Time", color: "white" }, grid: { color: "gray" } },
+                    y: { title: { display: true, text: "ABG Density", color: "white" }, grid: { color: "gray" } }
+                }
+            }
+        });
+    }
+
+    document.getElementById("closeGraph").addEventListener("click", function () {
+        document.getElementById("graphModal").style.display = "none";
+    });
+
 });
